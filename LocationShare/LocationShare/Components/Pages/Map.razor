@@ -1,0 +1,80 @@
+﻿@page "/map"
+@using Microsoft.AspNetCore.SignalR.Client
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager;
+
+@if (!IsConnected)
+{
+    <h3>Enter Room</h3>
+    <input @bind="roomName" placeholder="Room name" />
+    <input @bind="username" placeholder="Username" />
+    <button @onclick="Connect">Connect</button>
+}
+else
+{
+    <h3>Connected to @roomName as @username</h3>
+}
+<div id="mapid" style="height: 400px;"></div>
+
+@code {
+    private Timer locationUpdateTimer;
+    private HubConnection hubConnection;
+    private string roomName;
+    private string username;
+
+    private async Task Connect()
+    {
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(NavigationManager.ToAbsoluteUri("/mapHub"))
+            .Build();
+
+        hubConnection.On<string, double, double>("ReceiveLocationUpdate", async (user, lat, lon) =>
+        {
+            // Add a marker to the map for the user's location
+            await JSRuntime.InvokeVoidAsync("addMarker", lat, lon, user);
+        });
+
+        await hubConnection.StartAsync();
+        await hubConnection.SendAsync("JoinRoom", roomName);
+        // Start the location update timer
+        locationUpdateTimer = new Timer(async _ =>
+        {
+            var location = await JSRuntime.InvokeAsync<Location>("getUserLocation");
+            await UpdateLocation(location.Latitude, location.Longitude);
+        }, null, TimeSpan.Zero, TimeSpan.FromSeconds(10));
+    }
+
+    private async Task UpdateLocation(double latitude, double longitude)
+    {
+        await hubConnection.SendAsync("UpdateLocation", roomName, username, latitude, longitude);
+    }
+
+    public bool IsConnected => hubConnection?.State == HubConnectionState.Connected;
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+
+        // Stop the location update timer
+        locationUpdateTimer?.Dispose();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Initialize the map
+            await JSRuntime.InvokeVoidAsync("initMap");
+        }
+    }
+
+    private class Location
+    {
+        public double Latitude { get; set; }
+        public double Longitude { get; set; }
+    }
+
+}

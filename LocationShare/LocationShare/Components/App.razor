@@ -1,0 +1,29 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
+    <link rel="stylesheet" href="bootstrap/bootstrap.min.css" />
+    <link rel="stylesheet" href="app.css" />
+    <link rel="stylesheet" href="LocationShare.styles.css" />
+    <!--Leaflet CSS is needed for the map component to work-->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <HeadOutlet @rendermode="InteractiveServer" />
+</head>
+
+<body>
+    <Routes @rendermode="InteractiveServer" />
+    <script src="_framework/blazor.web.js"></script>
+
+    <!--Leaflet JS is needed for the map component to work-->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <!-- This script controls the map component -->
+    <script src="js/site.js"></script>
+
+</body>
+
+</html>
